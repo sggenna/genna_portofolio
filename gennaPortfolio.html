@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genna Gonzaga — Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #fdf6f0;
+    --surface: #fff9f6;
+    --surface2: #ffeee8;
+    --border: #f5d5cb;
+    --accent:  #e8637a;
+    --accent2: #c94f7c;
+    --accent3: #f0a0b8;
+    --accent4: #d4739e;
+    --accent5: #f7c5d5;
+    --text: #2d1a22;
+    --muted: #a07080;
+    --font-display: 'Playfair Display', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.7; overflow-x: hidden; }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: radial-gradient(circle, rgba(232,99,122,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none; z-index: 0;
+  }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; border-bottom: 1px solid var(--border); background: rgba(253,246,240,0.94); backdrop-filter: blur(14px); }
+  .nav-logo { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-style: italic; color: var(--accent); }
+  .nav-links { display: flex; gap: 32px; list-style: none; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--accent); }
+
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 48px 80px; position: relative; overflow: hidden; }
+  .hero-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+  .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(232,99,122,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(232,99,122,0.05) 1px, transparent 1px); background-size: 56px 56px; }
+  .hero-orb { position: absolute; border-radius: 50%; filter: blur(100px); }
+  .hero-orb-1 { width: 700px; height: 700px; background: radial-gradient(circle, #f7c5d5, #e8637a); opacity: 0.18; top: -180px; right: -120px; }
+  .hero-orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #ffeee8, #c94f7c); opacity: 0.12; bottom: 60px; left: 100px; }
+  .hero-tag { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent2); margin-bottom: 20px; opacity: 0; animation: fadeUp 0.8s 0.2s forwards; position: relative; z-index:1; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(64px, 10vw, 140px); font-weight: 700; line-height: 0.9; letter-spacing: -0.02em; color: var(--text); opacity: 0; animation: fadeUp 0.8s 0.4s forwards; position: relative; z-index:1; }
+  .hero-title em { font-style: italic; color: var(--accent); }
+  .hero-sub { max-width: 480px; color: var(--muted); margin-top: 32px; font-size: 13px; line-height: 1.8; opacity: 0; animation: fadeUp 0.8s 0.6s forwards; position: relative; z-index:1; }
+  .hero-links { display: flex; gap: 16px; margin-top: 40px; opacity: 0; animation: fadeUp 0.8s 0.8s forwards; position: relative; z-index:1; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; border: 1.5px solid; transition: all 0.2s; cursor: pointer; background: transparent; }
+  .btn-primary { border-color: var(--accent); color: var(--accent); }
+  .btn-primary:hover { background: var(--accent); color: #fff; }
+  .btn-ghost { border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent3); color: var(--accent); }
+
+  section { padding: 100px 48px; border-top: 1px solid var(--border); position: relative; z-index:1; }
+  .section-label { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent3); margin-bottom: 12px; }
+  .section-title { font-family: var(--font-display); font-size: clamp(40px, 5vw, 72px); font-weight: 700; line-height: 1; letter-spacing: -0.01em; margin-bottom: 60px; }
+  .section-title em { font-style: italic; color: var(--accent); }
+
+  .project-block { margin-bottom: 80px; opacity: 0; transform: translateY(24px); transition: opacity 0.6s, transform 0.6s; }
+  .project-block:last-child { margin-bottom: 0; }
+  .project-block.visible { opacity: 1; transform: none; }
+  .project-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 12px; }
+  .project-title { font-family: var(--font-display); font-size: 32px; font-weight: 700; color: var(--text); }
+  .project-meta { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .project-stack { font-size: 11px; color: var(--accent2); letter-spacing: 0.05em; margin-bottom: 16px; }
+  .project-desc { font-size: 12px; color: var(--muted); line-height: 1.8; max-width: 640px; margin-bottom: 32px; }
+
+  .viz-tabs { display: flex; gap: 2px; margin-bottom: 2px; flex-wrap: wrap; }
+  .viz-tab { padding: 10px 20px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .viz-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .viz-tab:hover:not(.active) { color: var(--accent); border-color: var(--accent3); }
+  .viz-panel { display: none; background: var(--surface); padding: 36px; border: 1px solid var(--border); }
+  .viz-panel.active { display: block; }
+  .viz-panel-title { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent2); margin-bottom: 6px; }
+  .viz-panel-desc { font-size: 12px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; max-width: 600px; }
+
+  .exp-list { display: flex; flex-direction: column; }
+  .exp-item { display: grid; grid-template-columns: 200px 1fr; gap: 40px; padding: 32px 0; border-bottom: 1px solid var(--border); opacity: 0; transform: translateY(16px); transition: opacity 0.5s, transform 0.5s; }
+  .exp-item.visible { opacity: 1; transform: none; }
+  .exp-item .viz-tabs { margin-top: 0; }
+  .exp-item .viz-panel { border-radius: 0; }
+  .exp-date { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; padding-top: 4px; }
+  .exp-role { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .exp-company { font-size: 11px; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .exp-desc { font-size: 12px; color: var(--muted); line-height: 1.7; max-width: 560px; }
+
+  .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .skill-block { background: var(--surface); padding: 32px; border: 1px solid var(--border); opacity: 0; transform: translateY(16px); transition: opacity 0.5s, transform 0.5s; }
+  .skill-block.visible { opacity: 1; transform: none; }
+  .skill-block-title { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skill-tag { font-size: 11px; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; letter-spacing: 0.05em; background: var(--bg); }
+
+  .contact-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .contact-text { font-family: var(--font-display); font-size: clamp(36px, 4vw, 60px); font-weight: 700; line-height: 1.1; }
+  .contact-text em { font-style: italic; color: var(--accent); }
+  .contact-links { display: flex; flex-direction: column; }
+  .contact-link { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); transition: color 0.2s; }
+  .contact-link:hover { color: var(--accent); }
+  .contact-link-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .contact-link-val { font-family: var(--font-display); font-size: 18px; font-style: italic; }
+
+  footer { padding: 32px 48px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; letter-spacing: 0.05em; position: relative; z-index:1; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .tooltip { position: fixed; background: #fff; border: 1px solid var(--border); padding: 10px 14px; font-family: var(--font-mono); font-size: 11px; color: var(--text); pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 1000; letter-spacing: 0.03em; line-height: 1.6; max-width: 240px; box-shadow: 0 4px 20px rgba(232,99,122,0.14); }
+  svg text { font-family: var(--font-mono); }
+  .proj-links { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="tooltip" id="tooltip"></div>
+
+<nav>
+  <div class="nav-logo">Genna Gonzaga</div>
+  <ul class="nav-links">
+    <li><a href="#work">Experience</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<section class="hero" id="home">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+  </div>
+  <div class="hero-tag">CS @ Columbia · Visual Arts Minor · Data Visualization</div>
+  <h1 class="hero-title">Genna<br><em>Gonzaga</em></h1>
+  <p class="hero-sub">I build data-driven interfaces that make complex information feel intuitive. I sit at the intersection of engineering, data, and design.</p>
+  <div class="hero-links">
+    <a href="#work" class="btn btn-primary">View Experience</a>
+    <a href="https://github.com/sggenna" target="_blank" class="btn btn-ghost">GitHub ↗</a>
+    <a href="https://linkedin.com/in/genna-gonzaga-0307b5206" target="_blank" class="btn btn-ghost">LinkedIn ↗</a>
+  </div>
+</section>
+
+<section id="work">
+  <div class="section-label">Experience</div>
+  <h2 class="section-title">Where I've<br><em>Built</em></h2>
+  <div class="exp-list">
+    <div class="exp-item">
+      <div class="exp-date">Oct 2025 — Present</div>
+      <div>
+        <div class="exp-role">Full Stack Engineer</div>
+        <div class="exp-company">Fluency On · Remote</div>
+        <div class="exp-desc">Architected a full-stack LMS with React/TypeScript and Node.js/Express serving 100+ users, including interactive learning activities and progress analytics.</div>
+        <div style="margin-top:24px">
+          <div class="viz-tabs" id="tabs-f">
+            <button class="viz-tab active" onclick="switchTab('f',0,this)">Security Architecture</button>
+          </div>
+          <div class="viz-panel active" id="f-0">
+            <div class="viz-panel-title">API Security Layer Strength</div>
+            <div class="viz-panel-desc">12+ RESTful endpoints protected by stacked enterprise-grade security layers.</div>
+            <div id="c-f-infra"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="exp-item">
+      <div class="exp-date">Jun 2025 — Present</div>
+      <div>
+        <div class="exp-role">Software Engineer &amp; NLP Research Intern</div>
+        <div class="exp-company">Federal University of Bahia · Remote</div>
+        <div class="exp-desc">Built DicioBase, a unified lexical search platform for 5+ international linguistics institutions. Optimized query performance by 40% through B-tree indexing.</div>
+        <div style="margin-top:24px">
+          <div class="viz-tabs" id="tabs-d">
+            <button class="viz-tab active" onclick="switchTab('d',0,this)">Query Optimization</button>
+          </div>
+          <div class="viz-panel active" id="d-0">
+            <div class="viz-panel-title">Step-by-Step Query Performance Improvement</div>
+            <div class="viz-panel-desc">Each optimization step measurably improved response times across multiple dictionary databases.</div>
+            <div id="c-d-perf"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="exp-item">
+      <div class="exp-date">Sep 2025 — Dec 2025</div>
+      <div>
+        <div class="exp-role">AI/ML Fellow</div>
+        <div class="exp-company">Cambio Labs · New York, NY</div>
+        <div class="exp-desc">Developed a mobile-first resource-matching platform for 300+ NYCHA entrepreneurs using SVM and KNN models, with an end-to-end Python NLP pipeline.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects">
+  <div class="section-label">Work &amp; Class Projects</div>
+  <h2 class="section-title">Selected<br><em>Projects</em></h2>
+
+  <div class="project-block">
+    <div class="project-meta">Data Visualization · Columbia University</div>
+    <div class="project-header"><div class="project-title">Bechdel Test Analysis</div></div>
+    <div class="project-stack">D3.js · Python · Pandas · HTML/CSS</div>
+    <div class="project-desc">An exploration of gender representation in 1,794 Hollywood films from 1970–2013 using the Bechdel Test — which asks whether a film has at least two named women who talk to each other about something other than a man.</div>
+    <div class="viz-tabs" id="tabs-b">
+      <button class="viz-tab active" onclick="switchTab('b',0,this)">Pass Rate by Decade</button>
+      <button class="viz-tab" onclick="switchTab('b',1,this)">Budget vs. Representation</button>
+      <button class="viz-tab" onclick="switchTab('b',2,this)">Why Films Fail</button>
+    </div>
+    <div class="viz-panel active" id="b-0">
+      <div class="viz-panel-title">Bechdel Pass Rate by Decade</div>
+      <div class="viz-panel-desc">Despite decades of cultural progress, the share of films passing plateaued around 45–49% in the 2000s. Only 1 in 4 passed in the 1970s.</div>
+      <div id="c-b-decade"></div>
+    </div>
+    <div class="viz-panel" id="b-1">
+      <div class="viz-panel-title">Budget Quartile vs. Pass Rate</div>
+      <div class="viz-panel-desc">Higher-budget films are significantly less likely to pass. Bubble size = average budget. Big studio productions skew toward male-led narratives.</div>
+      <div id="c-b-budget"></div>
+    </div>
+    <div class="viz-panel" id="b-2">
+      <div class="viz-panel-title">Breakdown of Failing Films</div>
+      <div class="viz-panel-desc">Of 991 films that fail, the most common reason is that women who appear don't talk to each other — not that women are absent entirely.</div>
+      <div id="c-b-fail"></div>
+    </div>
+  </div>
+
+  <div class="project-block">
+    <div class="project-meta">Data Visualization · Columbia University</div>
+    <div class="project-header"><div class="project-title">NYC Borough Census 2000–2010</div></div>
+    <div class="project-stack">D3.js · Python · Pandas · HTML/CSS</div>
+    <div class="project-desc">A comparative analysis of NYC's five boroughs across the 2000 and 2010 US Census. Staten Island grew fastest, Queens barely moved, and Manhattan slowly became more owner-occupied.</div>
+    <div class="viz-tabs" id="tabs-n">
+      <button class="viz-tab active" onclick="switchTab('n',0,this)">Population Change</button>
+      <button class="viz-tab" onclick="switchTab('n',1,this)">Homeownership Rate</button>
+      <button class="viz-tab" onclick="switchTab('n',2,this)">Household Density</button>
+    </div>
+    <div class="viz-panel active" id="n-0">
+      <div class="viz-panel-title">Population Change by Borough (2000–2010)</div>
+      <div class="viz-panel-desc">Staten Island grew the most proportionally (+5.6%), while Queens was nearly flat (+0.1%).</div>
+      <div id="c-n-pop"></div>
+    </div>
+    <div class="viz-panel" id="n-1">
+      <div class="viz-panel-title">Owner-Occupied Housing Rate (2000 vs. 2010)</div>
+      <div class="viz-panel-desc">Rates stayed remarkably stable. Manhattan is the only borough where homeownership increased — from 18.6% to 20.5%.</div>
+      <div id="c-n-owner"></div>
+    </div>
+    <div class="viz-panel" id="n-2">
+      <div class="viz-panel-title">Average Persons per Housing Unit (2010)</div>
+      <div class="viz-panel-desc">Manhattan has the lowest household density at 1.87 persons per unit — a reflection of its high proportion of single-person households.</div>
+      <div id="c-n-density"></div>
+    </div>
+  </div>
+
+  <div class="project-block">
+    <div class="project-meta">Data Visualization · Columbia University</div>
+    <div class="project-header"><div class="project-title">NYC Transit Rider Survey</div></div>
+    <div class="project-stack">D3.js · Python · HTML/CSS</div>
+    <div class="project-desc">An interactive exploration of a rider satisfaction survey covering delays, complaints, affordability, and commuter behavior across all five boroughs.</div>
+    <div class="viz-tabs" id="tabs-t">
+      <button class="viz-tab active" onclick="switchTab('t',0,this)">Delay Response Behavior</button>
+      <button class="viz-tab" onclick="switchTab('t',1,this)">Top Rider Complaints</button>
+      <button class="viz-tab" onclick="switchTab('t',2,this)">Ride Length Distribution</button>
+    </div>
+    <div class="viz-panel active" id="t-0">
+      <div class="viz-panel-title">What Riders Do When Delayed 15+ Minutes</div>
+      <div class="viz-panel-desc">Most riders simply wait — but a significant segment switches to buses or walks.</div>
+      <div id="c-t-delay"></div>
+    </div>
+    <div class="viz-panel" id="t-1">
+      <div class="viz-panel-title">Top Rider Complaints (Priority Score)</div>
+      <div class="viz-panel-desc">Delays dominate overwhelmingly. Overcrowding and station infrastructure follow closely.</div>
+      <div id="c-t-complaints"></div>
+    </div>
+    <div class="viz-panel" id="t-2">
+      <div class="viz-panel-title">Average Subway Ride Length</div>
+      <div class="viz-panel-desc">Most riders take medium-length trips of 20–40 minutes. Each square = 1% of riders.</div>
+      <div id="c-t-length"></div>
+    </div>
+  </div>
+
+</section>
+
+<section id="skills">
+  <div class="section-label">Toolkit</div>
+  <h2 class="section-title">What I<br><em>Work With</em></h2>
+  <div class="skills-grid">
+    <div class="skill-block"><div class="skill-block-title">Visualization &amp; Frontend</div><div class="skill-tags"><span class="skill-tag">D3.js</span><span class="skill-tag">Recharts</span><span class="skill-tag">React</span><span class="skill-tag">TypeScript</span><span class="skill-tag">Vite</span><span class="skill-tag">CSS3</span><span class="skill-tag">Tailwind</span></div></div>
+    <div class="skill-block"><div class="skill-block-title">Data &amp; Backend</div><div class="skill-tags"><span class="skill-tag">PostgreSQL</span><span class="skill-tag">Python</span><span class="skill-tag">SQL</span><span class="skill-tag">Node.js</span><span class="skill-tag">REST APIs</span><span class="skill-tag">Firebase</span><span class="skill-tag">Supabase</span></div></div>
+    <div class="skill-block"><div class="skill-block-title">ML &amp; Analysis</div><div class="skill-tags"><span class="skill-tag">scikit-learn</span><span class="skill-tag">NLTK</span><span class="skill-tag">SVM / KNN</span><span class="skill-tag">Feature Engineering</span><span class="skill-tag">NLP</span></div></div>
+    <div class="skill-block"><div class="skill-block-title">Design</div><div class="skill-tags"><span class="skill-tag">Data Storytelling</span><span class="skill-tag">Typography</span><span class="skill-tag">Color Theory</span><span class="skill-tag">UI/UX</span><span class="skill-tag">Visual Arts</span></div></div>
+    <div class="skill-block"><div class="skill-block-title">Cloud &amp; DevOps</div><div class="skill-tags"><span class="skill-tag">AWS</span><span class="skill-tag">Vercel</span><span class="skill-tag">Docker</span><span class="skill-tag">GitHub Actions</span><span class="skill-tag">CI/CD</span></div></div>
+    <div class="skill-block"><div class="skill-block-title">Languages</div><div class="skill-tags"><span class="skill-tag">JavaScript</span><span class="skill-tag">TypeScript</span><span class="skill-tag">Python</span><span class="skill-tag">SQL</span><span class="skill-tag">Java</span><span class="skill-tag">C/C++</span><span class="skill-tag">Ruby</span></div></div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-text">Let's build something<br><em>worth seeing.</em></div>
+    <div class="contact-links">
+      <a href="mailto:genna@columbia.edu" class="contact-link"><span class="contact-link-label">Email</span><span class="contact-link-val">genna@columbia.edu</span></a>
+      <a href="https://linkedin.com/in/genna-gonzaga-0307b5206" target="_blank" class="contact-link"><span class="contact-link-label">LinkedIn</span><span class="contact-link-val">genna-gonzaga ↗</span></a>
+      <a href="https://github.com/sggenna" target="_blank" class="contact-link"><span class="contact-link-label">GitHub</span><span class="contact-link-val">sggenna ↗</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 Genna Gonzaga</span>
+  <span>Columbia University · CS + Visual Arts</span>
+</footer>
+
+<script>
+// ─── Pink palette ───
+const P = {
+  rose:'#e8637a', mauve:'#c94f7c', blush:'#f0a0b8', orchid:'#d4739e',
+  petal:'#f7c5d5', dusty:'#c9839e', coral:'#e8907a', lavrose:'#b87aa8',
+  muted:'#c0a0b0', grid:'#f5d5cb', label:'#a07080', text:'#2d1a22'
+};
+const PCOLORS = [P.rose,P.mauve,P.blush,P.orchid,P.coral,P.dusty,P.lavrose,P.petal,P.muted];
+
+const tooltip = document.getElementById('tooltip');
+function showTip(html,x,y){tooltip.innerHTML=html;tooltip.style.opacity=1;tooltip.style.left=(x+16)+'px';tooltip.style.top=(y-10)+'px';}
+function hideTip(){tooltip.style.opacity=0;}
+
+// ─── Get real container width even if panel is hidden ───
+function getW(id,fallback){
+  fallback=fallback||640;
+  const el=document.getElementById(id); if(!el) return fallback;
+  if(el.offsetWidth>0) return el.offsetWidth;
+  // panel might be display:none — measure via a sibling active panel for reference
+  const section=el.closest('section');
+  if(section&&section.offsetWidth>0) return section.offsetWidth-96;
+  return fallback;
+}
+
+// ─── Tab switching ───
+const rendered=new Set();
+function switchTab(group,idx,btn){
+  document.querySelectorAll('#tabs-'+group+' .viz-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('[id^="'+group+'-"]').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  const key=group+'-'+idx;
+  if(!rendered.has(key)&&chartFns[key]){chartFns[key]();rendered.add(key);}
+}
+
+// ════════════════════════════
+//  CHART HELPERS
+// ════════════════════════════
+
+// LOLLIPOP (vertical or horizontal)
+function lollipop(id,data,lKey,vKey,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const horiz=opts.horizontal!==false;
+  const W=getW(id), H=opts.H||(horiz?Math.max(180,data.length*42+60):260);
+  const m=horiz?{top:10,right:80,bottom:24,left:opts.lw||160}:{top:30,right:24,bottom:48,left:48};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const colFn=opts.colorFn||((_,i)=>PCOLORS[i%PCOLORS.length]);
+
+  if(horiz){
+    const y=d3.scaleBand().domain(data.map(d=>d[lKey])).range([0,h]).padding(0.35);
+    const x=d3.scaleLinear().domain([0,opts.xMax||d3.max(data,d=>d[vKey])*1.2]).range([0,w]);
+    g.selectAll('.gl').data(x.ticks(5)).enter().append('line').attr('y1',0).attr('y2',h).attr('x1',d=>x(d)).attr('x2',d=>x(d)).attr('stroke',P.grid).attr('stroke-width',1);
+    data.forEach((d,i)=>{
+      const cy=y(d[lKey])+y.bandwidth()/2, col=colFn(d,i);
+      g.append('line').attr('x1',0).attr('x2',0).attr('y1',cy).attr('y2',cy).attr('stroke',col).attr('stroke-width',2).attr('opacity',0.55).transition().duration(650).delay(i*55).attr('x2',x(d[vKey]));
+      g.append('circle').attr('cx',0).attr('cy',cy).attr('r',7).attr('fill',col).attr('opacity',0).style('cursor','pointer')
+        .on('mousemove',ev=>showTip(opts.tip?opts.tip(d):'<strong>'+d[lKey]+'</strong><br/>'+d[vKey],ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+        .transition().duration(650).delay(i*55).attr('cx',x(d[vKey])).attr('opacity',1);
+      g.append('text').attr('x',x(d[vKey])+10).attr('y',cy+4).attr('fill',P.label).attr('font-size','11px').attr('opacity',0).transition().delay(i*55+400).attr('opacity',1).text(opts.fmt?opts.fmt(d[vKey]):d[vKey]);
+    });
+    g.append('g').call(d3.axisLeft(y).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','11px').attr('dx','-6');
+  } else {
+    const x=d3.scaleBand().domain(data.map(d=>d[lKey])).range([0,w]).padding(0.3);
+    const y=d3.scaleLinear().domain([0,opts.yMax||d3.max(data,d=>d[vKey])*1.2]).range([h,0]);
+    g.selectAll('.gl').data(y.ticks(5)).enter().append('line').attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke',P.grid).attr('stroke-width',1);
+    if(opts.refLine!=null){
+      g.append('line').attr('x1',0).attr('x2',w).attr('y1',y(opts.refLine)).attr('y2',y(opts.refLine)).attr('stroke',P.orchid).attr('stroke-width',1.5).attr('stroke-dasharray','5,4').attr('opacity',0.5);
+      g.append('text').attr('x',w+4).attr('y',y(opts.refLine)+4).attr('fill',P.orchid).attr('font-size','10px').text(opts.refLine+'%');
+    }
+    data.forEach((d,i)=>{
+      const cx=x(d[lKey])+x.bandwidth()/2, col=colFn(d,i);
+      g.append('line').attr('x1',cx).attr('x2',cx).attr('y1',h).attr('y2',h).attr('stroke',col).attr('stroke-width',2.5).attr('opacity',0.6).transition().duration(700).delay(i*100).attr('y2',y(d[vKey]));
+      g.append('circle').attr('cx',cx).attr('cy',h).attr('r',9).attr('fill',col).attr('opacity',0).style('cursor','pointer')
+        .on('mousemove',ev=>showTip(opts.tip?opts.tip(d):'<strong>'+d[lKey]+'</strong><br/>'+d[vKey],ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+        .transition().duration(700).delay(i*100).attr('cy',y(d[vKey])).attr('opacity',1);
+      g.append('text').attr('x',cx).attr('y',y(d[vKey])-14).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','10px').attr('opacity',0).transition().delay(i*100+500).attr('opacity',1).text(opts.fmt?opts.fmt(d[vKey]):d[vKey]);
+    });
+    g.append('g').attr('transform','translate(0,'+h+')').call(d3.axisBottom(x).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','11px').attr('dy','1.4em');
+    g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(opts.yFmt||null).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px');
+  }
+}
+
+// DONUT
+function donut(id,data,lKey,vKey,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||280;
+  const colors=opts.colors||PCOLORS;
+  const colFn=opts.colorFn||((d,i)=>colors[i%colors.length]);
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const radius=Math.min(W*0.28,H*0.43);
+  const cx=W*0.34, cy=H/2;
+  const total=d3.sum(data,d=>d[vKey]);
+  const pie=d3.pie().value(d=>d[vKey]).sort(null);
+  const arc=d3.arc().innerRadius(radius*0.54).outerRadius(radius);
+  const arcH=d3.arc().innerRadius(radius*0.54).outerRadius(radius*1.07);
+  pie(data).forEach((d,i)=>{
+    const col=colFn(d.data,i);
+    svg.append('path').datum(d).attr('transform','translate('+cx+','+cy+')')
+      .attr('fill',col).attr('opacity',0.88).style('cursor','pointer')
+      .on('mousemove',ev=>showTip(opts.tip?opts.tip(d.data,i):'<strong>'+d.data[lKey]+'</strong><br/>'+d.data[vKey],ev.clientX,ev.clientY))
+      .on('mouseenter',function(){d3.select(this).attr('d',arcH(d));})
+      .on('mouseleave',function(){d3.select(this).attr('d',arc(d));hideTip();})
+      .attr('d',arc({startAngle:d.startAngle,endAngle:d.startAngle}))
+      .transition().duration(900).delay(i*90)
+      .attrTween('d',function(){const ip=d3.interpolate({startAngle:d.startAngle,endAngle:d.startAngle},d);return t=>arc(ip(t));});
+    const pct=Math.round(d.data[vKey]/total*100);
+    if(pct>=9){
+      const mid=arc.centroid(d);
+      svg.append('text').attr('transform','translate('+(cx+mid[0])+','+(cy+mid[1])+')').attr('text-anchor','middle')
+        .attr('fill','#fff').attr('font-size','11px').attr('font-weight','500').attr('opacity',0).text(pct+'%').transition().delay(900+i*90).attr('opacity',1);
+    }
+  });
+  if(opts.center){
+    svg.append('text').attr('x',cx).attr('y',cy-7).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','12px').text(opts.center[0]);
+    if(opts.center[1]) svg.append('text').attr('x',cx).attr('y',cy+10).attr('text-anchor','middle').attr('fill',P.muted).attr('font-size','10px').text(opts.center[1]);
+  }
+  const lx=W*0.63, ly=H/2-data.length*13;
+  data.forEach((d,i)=>{
+    svg.append('rect').attr('x',lx).attr('y',ly+i*26).attr('width',11).attr('height',11).attr('fill',colFn(d,i)).attr('rx',2).attr('opacity',0.88);
+    const lab=(d[lKey].length>24?d[lKey].slice(0,22)+'…':d[lKey]);
+    svg.append('text').attr('x',lx+17).attr('y',ly+i*26+10).attr('fill',P.label).attr('font-size','11px').text(lab);
+  });
+}
+
+// GROUPED BAR
+function groupedBar(id,data,gKey,series,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||260;
+  const m={top:24,right:100,bottom:50,left:60};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const x0=d3.scaleBand().domain(data.map(d=>d[gKey])).range([0,w]).padding(0.22);
+  const x1=d3.scaleBand().domain(series.map(s=>s.key)).range([0,x0.bandwidth()]).padding(0.08);
+  const allV=data.flatMap(d=>series.map(s=>d[s.key]));
+  const y=d3.scaleLinear().domain([0,d3.max(allV)*1.18]).range([h,0]);
+  g.selectAll('.gl').data(y.ticks(5)).enter().append('line').attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke',P.grid).attr('stroke-width',1);
+  data.forEach(d=>{
+    series.forEach(s=>{
+      g.append('rect').attr('x',x0(d[gKey])+x1(s.key)).attr('width',x1.bandwidth()).attr('y',h).attr('height',0).attr('fill',s.color).attr('opacity',0.85).attr('rx',1).style('cursor','pointer')
+        .on('mousemove',ev=>showTip('<strong>'+d[gKey]+'</strong><br/>'+s.label+': '+(opts.yFmt?opts.yFmt(d[s.key]):d[s.key]),ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+        .transition().duration(700).attr('y',y(d[s.key])).attr('height',h-y(d[s.key]));
+    });
+  });
+  g.append('g').attr('transform','translate(0,'+h+')').call(d3.axisBottom(x0).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px').attr('dy','1.4em');
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(opts.yFmt||null).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px');
+  series.forEach((s,i)=>{
+    const lg=svg.append('g').attr('transform','translate('+(W-m.right+12)+','+(28+i*22)+')');
+    lg.append('rect').attr('width',11).attr('height',11).attr('fill',s.color).attr('rx',2).attr('opacity',0.85);
+    lg.append('text').attr('x',17).attr('y',10).attr('fill',P.label).attr('font-size','11px').text(s.label);
+  });
+}
+
+// SLOPE CHART
+function slopeChart(id,data,gKey,v1Key,v2Key,lab1,lab2,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||280;
+  const m={top:38,right:120,bottom:20,left:108};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const allV=data.flatMap(d=>[d[v1Key],d[v2Key]]);
+  const pad=(d3.max(allV)-d3.min(allV))*0.32;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const y=d3.scaleLinear().domain([d3.min(allV)-pad,d3.max(allV)+pad]).range([h,0]);
+  const suf=opts.suffix||'';
+  g.append('text').attr('x',0).attr('y',-16).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','12px').text(lab1);
+  g.append('text').attr('x',w).attr('y',-16).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','12px').text(lab2);
+  data.forEach((d,i)=>{
+    const col=PCOLORS[i%PCOLORS.length];
+    g.append('line').attr('x1',0).attr('x2',0).attr('y1',y(d[v1Key])).attr('y2',y(d[v1Key])).attr('stroke',col).attr('stroke-width',2.5).attr('opacity',0)
+      .on('mousemove',ev=>showTip('<strong>'+d[gKey]+'</strong><br/>'+lab1+': '+d[v1Key]+suf+'<br/>'+lab2+': '+d[v2Key]+suf,ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+      .transition().delay(i*80).attr('x2',w).attr('y2',y(d[v2Key])).attr('opacity',0.75);
+    [[0,d[v1Key]],[w,d[v2Key]]].forEach(([x,r])=>{
+      g.append('circle').attr('cx',x).attr('cy',y(r)).attr('r',5).attr('fill',col).attr('stroke','#fff').attr('stroke-width',1.5).attr('opacity',0).transition().delay(i*80+400).attr('opacity',1);
+    });
+    g.append('text').attr('x',-8).attr('y',y(d[v1Key])+4).attr('text-anchor','end').attr('fill',col).attr('font-size','11px').text(d[gKey]);
+    g.append('text').attr('x',-8).attr('y',y(d[v1Key])+16).attr('text-anchor','end').attr('fill',P.muted).attr('font-size','10px').text(d[v1Key]+suf);
+    const delta=d[v2Key]-d[v1Key];
+    const arrow=delta>0?'↑':delta<0?'↓':'—';
+    const ac=delta>0?P.rose:delta<0?P.orchid:P.muted;
+    g.append('text').attr('x',w+8).attr('y',y(d[v2Key])+4).attr('fill',P.label).attr('font-size','11px').text(d[v2Key]+suf);
+    g.append('text').attr('x',w+8).attr('y',y(d[v2Key])+16).attr('fill',ac).attr('font-size','10px').text(arrow+' '+Math.abs(delta).toFixed(1)+suf);
+  });
+}
+
+// WAFFLE
+function waffle(id,data,lKey,vKey,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||220;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const total=d3.sum(data,d=>d[vKey]);
+  const cols=20,rows=5;
+  const sq=Math.min(Math.floor((W-200)/cols-2),Math.floor((H-50)/rows-2));
+  const ox=16, oy=30;
+  const segs=[];
+  data.forEach((d,ci)=>{const n=Math.round(d[vKey]/total*100);for(let k=0;k<n;k++)segs.push(ci);});
+  while(segs.length<100)segs.push(segs[segs.length-1]);
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const si=r*cols+c; if(si>=100) break;
+      const ci=segs[si]||0;
+      svg.append('rect').attr('x',ox+c*(sq+2)).attr('y',oy+r*(sq+2)).attr('width',sq).attr('height',sq).attr('rx',2)
+        .attr('fill',PCOLORS[ci%PCOLORS.length]).attr('opacity',0).style('cursor','pointer')
+        .on('mousemove',ev=>showTip('<strong>'+data[ci][lKey]+'</strong><br/>'+data[ci][vKey]+'% of riders',ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+        .transition().duration(300).delay(si*5).attr('opacity',0.85);
+    }
+  }
+  svg.append('text').attr('x',ox).attr('y',18).attr('fill',P.muted).attr('font-size','10px').attr('letter-spacing','0.1em').text('EACH SQUARE = 1% OF RIDERS');
+  const lx=ox+cols*(sq+2)+14, ly=oy;
+  data.forEach((d,i)=>{
+    svg.append('rect').attr('x',lx).attr('y',ly+i*26).attr('width',11).attr('height',11).attr('fill',PCOLORS[i%PCOLORS.length]).attr('rx',2).attr('opacity',0.85);
+    svg.append('text').attr('x',lx+17).attr('y',ly+i*26+10).attr('fill',P.label).attr('font-size','11px').text(d[lKey]+' — '+d[vKey]+'%');
+  });
+}
+
+// RADAR
+function radar(id,data,lKey,vKey,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||300;
+  const cx=W/2, cy=H/2, maxR=opts.maxVal||d3.max(data,d=>d[vKey]);
+  const radius=Math.min(cx,cy)-52;
+  const n=data.length, aSlice=Math.PI*2/n;
+  const rScale=d3.scaleLinear().domain([0,maxR]).range([0,radius]);
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  // filled rings
+  for(let ri=1;ri<=5;ri++){
+    const pts=data.map((_,i)=>{const a=aSlice*i-Math.PI/2,r=radius*ri/5;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];});
+    svg.append('polygon').attr('points',pts.map(p=>p.join(',')).join(' ')).attr('fill',ri%2?'rgba(247,197,213,0.08)':'rgba(232,99,122,0.04)').attr('stroke',P.grid).attr('stroke-width',1);
+    svg.append('text').attr('x',cx+3).attr('y',cy-radius*ri/5+3).attr('fill',P.muted).attr('font-size','9px').text((maxR*ri/5).toFixed(0));
+  }
+  // spokes
+  data.forEach((_,i)=>{const a=aSlice*i-Math.PI/2;svg.append('line').attr('x1',cx).attr('y1',cy).attr('x2',cx+radius*Math.cos(a)).attr('y2',cy+radius*Math.sin(a)).attr('stroke',P.grid).attr('stroke-width',1);});
+  // data
+  const pts=data.map((d,i)=>{const a=aSlice*i-Math.PI/2;return [cx+rScale(d[vKey])*Math.cos(a),cy+rScale(d[vKey])*Math.sin(a)];});
+  svg.append('polygon').attr('points',pts.map(p=>p.join(',')).join(' ')).attr('fill',P.rose).attr('opacity',0.18).attr('transform','scale(0)').attr('transform-origin',cx+' '+cy).transition().duration(900).attr('transform','scale(1)');
+  svg.append('polygon').attr('points',pts.map(p=>p.join(',')).join(' ')).attr('fill','none').attr('stroke',P.rose).attr('stroke-width',2.5).attr('opacity',0).transition().duration(900).attr('opacity',1);
+  data.forEach((d,i)=>{
+    const a=aSlice*i-Math.PI/2;
+    svg.append('circle').attr('cx',pts[i][0]).attr('cy',pts[i][1]).attr('r',5).attr('fill',P.rose).attr('stroke','#fff').attr('stroke-width',1.5).attr('opacity',0).style('cursor','pointer')
+      .on('mousemove',ev=>showTip('<strong>'+d[lKey]+'</strong><br/>'+d[vKey]+'/'+maxR,ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+      .transition().delay(900).attr('opacity',1);
+    const lx=cx+(radius+24)*Math.cos(a), ly=cy+(radius+24)*Math.sin(a);
+    svg.append('text').attr('x',lx).attr('y',ly+4).attr('text-anchor',Math.cos(a)>0.15?'start':Math.cos(a)<-0.15?'end':'middle').attr('fill',P.label).attr('font-size','11px').text(d[lKey]);
+  });
+}
+
+// LINE CHART
+function lineChart(id,data,xKey,series,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||240;
+  const m={top:20,right:90,bottom:50,left:45};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const x=d3.scalePoint().domain(data.map(d=>d[xKey])).range([0,w]);
+  const allV=data.flatMap(d=>series.map(s=>d[s.key]));
+  const y=d3.scaleLinear().domain([0,d3.max(allV)*1.18]).range([h,0]);
+  g.selectAll('.gl').data(y.ticks(5)).enter().append('line').attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke',P.grid).attr('stroke-width',1);
+  series.forEach((s,si)=>{
+    g.append('path').datum(data).attr('fill',s.color).attr('opacity',0.08).attr('d',d3.area().x(d=>x(d[xKey])).y0(h).y1(d=>y(d[s.key])).curve(d3.curveMonotoneX));
+    const path=g.append('path').datum(data).attr('fill','none').attr('stroke',s.color).attr('stroke-width',2.5).attr('d',d3.line().x(d=>x(d[xKey])).y(d=>y(d[s.key])).curve(d3.curveMonotoneX));
+    const len=path.node().getTotalLength();
+    path.attr('stroke-dasharray',len).attr('stroke-dashoffset',len).transition().duration(1200).attr('stroke-dashoffset',0);
+    data.forEach(d=>{
+      g.append('circle').attr('cx',x(d[xKey])).attr('cy',y(d[s.key])).attr('r',5).attr('fill',s.color).attr('stroke','#fff').attr('stroke-width',1.5).attr('opacity',0).transition().delay(1000).attr('opacity',1);
+      g.append('circle').attr('cx',x(d[xKey])).attr('cy',y(d[s.key])).attr('r',14).attr('fill','transparent').style('cursor','pointer').on('mousemove',ev=>showTip('<strong>'+d[xKey]+'</strong><br/>'+s.label+': '+d[s.key],ev.clientX,ev.clientY)).on('mouseleave',hideTip);
+    });
+    const lg=svg.append('g').attr('transform','translate('+(W-m.right+10)+','+(28+si*22)+')');
+    lg.append('line').attr('x1',0).attr('x2',16).attr('stroke',s.color).attr('stroke-width',2.5);
+    lg.append('text').attr('x',22).attr('y',4).attr('fill',P.label).attr('font-size','11px').text(s.label);
+  });
+  g.append('g').attr('transform','translate(0,'+h+')').call(d3.axisBottom(x).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px').attr('dy','1.4em');
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px');
+}
+
+// BUBBLE CHART
+function bubbleChart(id,data,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||260;
+  const m={top:24,right:20,bottom:52,left:55};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const x=d3.scaleLog().domain([5,200]).range([0,w]);
+  const y=d3.scaleLinear().domain([28,60]).range([h,0]);
+  const r=d3.scaleSqrt().domain([7.5,134]).range([14,38]);
+  const cs=d3.scaleSequential(d3.interpolateRgb(P.orchid,P.rose)).domain([33,52]);
+  g.selectAll('.gl').data(y.ticks(5)).enter().append('line').attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke',P.grid).attr('stroke-width',1);
+  g.append('line').attr('x1',0).attr('x2',w).attr('y1',y(50)).attr('y2',y(50)).attr('stroke',P.blush).attr('stroke-width',1.5).attr('stroke-dasharray','6,4').attr('opacity',0.7);
+  g.append('text').attr('x',4).attr('y',y(50)-7).attr('fill',P.orchid).attr('font-size','10px').text('50% pass rate');
+  data.forEach((d,i)=>{
+    g.append('circle').attr('cx',x(d.av)).attr('cy',y(d.r)).attr('r',0).attr('fill',cs(d.r)).attr('opacity',0.78).style('cursor','pointer')
+      .on('mousemove',ev=>showTip('<strong>'+d.label+'</strong><br/>Avg budget: $'+d.av+'M<br/>Pass rate: '+d.r+'%',ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+      .transition().duration(800).delay(i*130).attr('r',r(d.av));
+    g.append('text').attr('x',x(d.av)).attr('y',y(d.r)+4).attr('text-anchor','middle').attr('fill','#fff').attr('font-size','11px').attr('pointer-events','none').attr('opacity',0).transition().delay(i*130+500).attr('opacity',1).text(d.r+'%');
+    g.append('text').attr('x',x(d.av)).attr('y',y(d.r)+r(d.av)+15).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','10px').attr('pointer-events','none').attr('opacity',0).transition().delay(i*130+600).attr('opacity',1).text(d.label);
+  });
+  g.append('g').attr('transform','translate(0,'+h+')').call(d3.axisBottom(x).ticks(4).tickFormat(v=>'$'+v+'M').tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px').attr('dy','1.4em');
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(v=>v+'%').tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px');
+  svg.append('text').attr('x',m.left+w/2).attr('y',H-2).attr('text-anchor','middle').attr('fill',P.muted).attr('font-size','10px').text('Average Budget (log scale) →');
+}
+
+// WATERFALL
+function waterfallChart(id,data,opts){
+  opts=opts||{};
+  const el=document.getElementById(id); if(!el) return;
+  const W=getW(id), H=opts.H||270;
+  const m={top:30,right:100,bottom:60,left:60};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select('#'+id).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform','translate('+m.left+','+m.top+')');
+  const x=d3.scaleBand().domain(data.map(d=>d.l)).range([0,w]).padding(0.35);
+  const y=d3.scaleLinear().domain([350,760]).range([h,0]);
+  const cs=d3.scaleLinear().domain([410,680]).range([P.rose,P.orchid]);
+  g.selectAll('.gl').data(y.ticks(5)).enter().append('line').attr('x1',0).attr('x2',w).attr('y1',d=>y(d)).attr('y2',d=>y(d)).attr('stroke',P.grid).attr('stroke-width',1);
+  data.forEach((d,i)=>{
+    const bx=x(d.l), bw=x.bandwidth();
+    g.append('rect').attr('x',bx).attr('y',h).attr('width',bw).attr('height',0).attr('fill',cs(d.t)).attr('opacity',0.88).attr('rx',2).style('cursor','pointer')
+      .on('mousemove',ev=>showTip('<strong>'+d.l.replace('\n',' ')+'</strong><br/>'+d.t+'ms',ev.clientX,ev.clientY)).on('mouseleave',hideTip)
+      .transition().duration(700).delay(i*120).attr('y',y(d.t)).attr('height',h-y(d.t));
+    g.append('text').attr('x',bx+bw/2).attr('y',y(d.t)-8).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','11px').attr('opacity',0).transition().delay(i*120+500).attr('opacity',1).text(d.t+'ms');
+    if(i<data.length-1){const nx=x(data[i+1].l);g.append('line').attr('x1',bx+bw).attr('x2',nx).attr('y1',y(d.t)).attr('y2',y(d.t)).attr('stroke',P.grid).attr('stroke-width',1).attr('stroke-dasharray','3,3');}
+    if(i>0){
+      g.append('text').attr('x',bx+bw/2).attr('y',y(d.t)+h-y(data[i-1].t)+18).attr('text-anchor','middle').attr('fill',P.rose).attr('font-size','10px').attr('opacity',0).transition().delay(i*120+600).attr('opacity',1).text('–'+(data[i-1].t-d.t)+'ms');
+    }
+    d.l.split('\n').forEach((line,li)=>{g.append('text').attr('x',bx+bw/2).attr('y',h+16+li*13).attr('text-anchor','middle').attr('fill',P.label).attr('font-size','10px').text(line);});
+  });
+  g.append('g').call(d3.axisLeft(y).ticks(5).tickFormat(v=>v+'ms').tickSize(0)).call(ax=>ax.select('.domain').remove()).selectAll('text').attr('fill',P.label).attr('font-size','10px');
+  svg.append('text').attr('x',W-m.right+4).attr('y',m.top).attr('fill',P.rose).attr('font-size','11px').attr('font-weight','500').text('↓ 40% FASTER');
+}
+
+// ════════════════════════════
+//  RENDER EAGER CHARTS
+// ════════════════════════════
+
+// b-0: Vertical lollipop — Bechdel pass by decade
+lollipop('c-b-decade',
+  [{d:'1970s',r:25.9,n:54},{d:'1980s',r:28.8,n:125},{d:'1990s',r:43.6,n:337},{d:'2000s',r:48.7,n:840},{d:'2010s',r:45.0,n:438}],
+  'd','r',{horizontal:false,H:260,yMax:60,refLine:50,
+    colorFn:d=>d3.scaleLinear().domain([25,50]).range([P.orchid,P.rose])(d.r),
+    fmt:v=>v+'%',yFmt:v=>v+'%',
+    tip:d=>'<strong>'+d.d+'</strong><br/>Pass rate: '+d.r+'%<br/>Films: '+d.n});
+
+// n-0: Grouped bar — NYC Population
+groupedBar('c-n-pop',
+  [{b:'Bronx',p00:1332650,p10:1385108},{b:'Brooklyn',p00:2465326,p10:2504700},{b:'Manhattan',p00:1537195,p10:1585873},{b:'Queens',p00:2229379,p10:2230722},{b:'Staten Is.',p00:443728,p10:468730}],
+  'b',
+  [{key:'p00',label:'2000',color:P.blush},{key:'p10',label:'2010',color:P.rose}],
+  {H:260,yFmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':Math.round(v/1000)+'K'});
+
+// t-0: Donut — transit delay behavior
+donut('c-t-delay',
+  [{a:'Wait for next train',p:38},{a:'Take a bus',p:22},{a:'Walk',p:18},{a:'Use another train',p:14},{a:'For-hire vehicle',p:5},{a:'Bike',p:3}],
+  'a','p',{center:['delayed','riders'],tip:d=>'<strong>'+d.a+'</strong><br/>'+d.p+'% of riders'});
+
+// f-0: Radar — Fluency security architecture
+radar('c-f-infra',
+  [{l:'JWT Auth',s:9},{l:'Rate Limiting',s:9},{l:'R2 Storage',s:9},{l:'Helmet Headers',s:8},{l:'CORS Policy',s:8},{l:'Token Validation',s:7}],
+  'l','s',{H:300,maxVal:10});
+
+// d-0: Waterfall — DicioBase query perf
+waterfallChart('c-d-perf',
+  [{l:'Baseline',t:680},{l:'+Full-text\nSearch',t:560},{l:'+B-tree\nIndex',t:460},{l:'+Composite\nIndex',t:410}]);
+
+// ════════════════════════════
+//  LAZY CHARTS (on tab click)
+// ════════════════════════════
+const chartFns = {
+  'b-1': ()=>bubbleChart('c-b-budget',
+    [{label:'Low Budget',r:51.9,av:7.5},{label:'Mid-Low',r:51.8,av:26},{label:'Mid-High',r:42.1,av:55},{label:'High Budget',r:33.2,av:134}]),
+
+  'b-2': ()=>donut('c-b-fail',
+    [{r:"Women don't talk",c:514},{r:'Only talk about men',c:194},{r:'Dubious/borderline',c:142},{r:'No named women',c:141}],
+    'r','c',{center:['991','failing films'],tip:d=>'<strong>'+d.r+'</strong><br/>'+d.c+' films'}),
+
+  'n-1': ()=>slopeChart('c-n-owner',
+    [{b:'Bronx',r00:18.5,r10:18.2},{b:'Brooklyn',r00:25.6,r10:25.4},{b:'Manhattan',r00:18.6,r10:20.5},{b:'Queens',r00:41.0,r10:40.2},{b:'Staten Is.',r00:60.8,r10:60.1}],
+    'b','r00','r10','2000','2010',{H:280,suffix:'%'}),
+
+  'n-2': ()=>lollipop('c-n-density',
+    [{b:'Manhattan',v:1.87},{b:'Brooklyn',v:2.50},{b:'Queens',v:2.67},{b:'Staten Is.',v:2.65},{b:'Bronx',v:2.71}],
+    'b','v',{horizontal:true,H:220,lw:100,xMax:3.2,
+      colorFn:d=>d3.scaleLinear().domain([1.8,2.8]).range([P.blush,P.mauve])(d.v),
+      fmt:v=>v+' ppl/unit',tip:d=>'<strong>'+d.b+'</strong><br/>'+d.v+' persons/unit'}),
+
+  't-1': ()=>lollipop('c-t-complaints',
+    [{c:'Delays',s:92},{c:'Overcrowded trains',s:78},{c:'Station infrastructure',s:65},{c:'High fares',s:61},{c:'Old trains',s:54},{c:'Crime / Safety',s:48},{c:'Frequent route changes',s:42},{c:'Customer service',s:35},{c:'Lack of handicap access',s:28}],
+    'c','s',{horizontal:true,H:340,lw:195,xMax:105,
+      colorFn:d=>d3.scaleLinear().domain([28,92]).range([P.blush,P.rose])(d.s),
+      fmt:v=>v+'/100',tip:d=>'<strong>'+d.c+'</strong><br/>Priority: '+d.s+'/100'}),
+
+  't-2': ()=>waffle('c-t-length',
+    [{l:'<20 min',p:18},{l:'20–40 min',p:41},{l:'40–60 min',p:26},{l:'60–90 min',p:11},{l:'90+ min',p:4}],
+    'l','p',{H:220}),
+};
+
+// Scroll reveal
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.project-block,.exp-item,.skill-block').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
